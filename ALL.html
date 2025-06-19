@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot</title>
+    
+    <!-- Inter Font from Google Fonts for a clean, modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* CSS Variables for a Dark Theme Color Palette */
+        :root {
+            --chat-body-bg: #1B1C1D; /* Very dark gray for the body background */
+            --chat-container-bg: #282C34; /* Slightly lighter dark gray for the chat container */
+            
+            --my-message-bg: #00796B; /* Deep Teal for user messages */
+            --other-message-bg: #3A404C; /* Soft Dark Gray for bot messages */
+            
+            --my-message-text: #FFFFFF; /* White text for user messages */
+            --other-message-text: #E0E6ED; /* Light gray text for bot messages and general text */
+            --timestamp-text: #9FB3C8; /* Muted light gray for timestamps */
+            
+            --input-bg: #2D313A; /* Darker shade for the input field background */
+            --input-border: #4A515E; /* Subtle border color for input */
+            --input-text: #E0E6ED; /* Light text for input */
+            
+            --send-button-bg: #3F51B5; /* Deep Blue for the send button background */
+            --send-button-hover-bg: #4C60D1; /* Slightly lighter blue on hover */
+            --send-button-text: #FFFFFF; /* White text for the send button */
+            
+            --spinner-color: #3498db; /* Blue for the loading spinner */
+
+            /* Scrollbar colors */
+            --scrollbar-track: #2D313A; /* Darker scrollbar track */
+            --scrollbar-thumb: #5E6778; /* Darker scrollbar thumb */
+            --scrollbar-thumb-hover: #7F8DA3; /* Lighter scrollbar thumb on hover */
+        }
+
+        /* Apply Inter font to the entire body and set background/text colors */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--chat-body-bg);
+            color: var(--other-message-text);
+            display: flex; /* Use flexbox for centering */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            min-height: 100vh; /* Full viewport height */
+            margin: 0; /* Remove default margin */
+            padding: 20px; /* Add some padding around the container */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+
+        /* Main chat container styling */
+        .chat-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 600px; /* Set a max-width for desktop */
+            height: 90vh; /* Take up most of the viewport height */
+            max-height: 800px; /* Max height for larger screens */
+            background-color: var(--chat-container-bg);
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3); /* Deeper shadow for dark mode */
+            overflow: hidden; /* Hide overflowing content, especially rounded corners */
+            border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border for definition */
+        }
+
+        /* Chat Header */
+        .chat-header {
+            padding: 16px;
+            background: linear-gradient(to right, #3F51B5, #673AB7); /* Blue-Purple gradient */
+            color: var(--send-button-text); /* White text */
+            text-align: center;
+            font-weight: 700; /* Bold font */
+            font-size: 1.25em; /* Larger text */
+            border-top-left-radius: 12px; /* Match container radius */
+            border-top-right-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); /* Soft shadow */
+            flex-shrink: 0; /* Prevent header from shrinking */
+        }
+
+        /* Chat History Area */
+        #chat-history {
+            flex-grow: 1; /* Allows chat history to fill available space */
+            overflow-y: auto; /* Enable vertical scrolling */
+            padding: 20px;
+            padding-right: 15px; /* Space for scrollbar */
+            display: flex; /* Use flexbox for messages */
+            flex-direction: column; /* Stack messages vertically */
+        }
+
+        /* Message wrapper for alignment */
+        .message-wrapper {
+            display: flex;
+            margin-bottom: 12px; /* Space between messages */
+        }
+
+        .message-wrapper.user-message-wrapper {
+            justify-content: flex-end; /* Align user messages to the right */
+        }
+
+        .message-wrapper.bot-message-wrapper {
+            justify-content: flex-start; /* Align bot messages to the left */
+        }
+
+        /* Message bubble styling */
+        .message-bubble {
+            padding: 12px 18px;
+            border-radius: 20px; /* More rounded corners for bubbles */
+            max-width: 78%; /* Limit bubble width */
+            word-wrap: break-word; /* Wrap long words */
+            line-height: 1.5; /* Good line spacing */
+            font-size: 0.95em; /* Slightly smaller font size */
+            position: relative; /* For timestamp positioning */
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15); /* Subtle shadow for bubbles */
+        }
+
+        .user-message .message-bubble {
+            background-color: var(--my-message-bg);
+            color: var(--my-message-text);
+            border-bottom-right-radius: 4px; /* Slight corner cut for user messages */
+        }
+
+        .bot-message .message-bubble {
+            background-color: var(--other-message-bg);
+            color: var(--other-message-text);
+            border-bottom-left-radius: 4px; /* Slight corner cut for bot messages */
+        }
+
+        /* Timestamp/Meta info within messages */
+        .message-timestamp {
+            font-size: 0.7em;
+            color: var(--timestamp-text);
+            opacity: 0.8;
+            margin-top: 5px;
+            display: block; /* Ensures it's on a new line */
+        }
+
+        .user-message .message-timestamp {
+            text-align: right;
+        }
+
+        .bot-message .message-timestamp {
+            text-align: left;
+        }
+
+        /* Input Area */
+        .input-area {
+            display: flex;
+            align-items: center; /* Vertically align items */
+            padding: 15px 20px; /* Padding inside the input area */
+            background-color: var(--chat-container-bg); /* Match container background */
+            border-top: 1px solid var(--input-border); /* Top border for separation */
+            flex-shrink: 0; /* Prevent input area from shrinking */
+        }
+
+        .user-input {
+            flex-grow: 1; /* Input field takes most space */
+            padding: 12px 18px;
+            border: 1px solid var(--input-border);
+            border-radius: 25px; /* Pill shape for input */
+            background-color: var(--input-bg);
+            color: var(--input-text);
+            font-size: 1em;
+            outline: none; /* Remove default outline */
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            margin-right: 15px; /* Space between input and button */
+        }
+
+        .user-input:focus {
+            border-color: var(--send-button-bg); /* Highlight border on focus */
+            box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.3); /* Subtle glow on focus */
+        }
+
+        .send-button {
+            background-color: var(--send-button-bg);
+            color: var(--send-button-text);
+            border: none;
+            border-radius: 25px; /* Matches input field rounding */
+            padding: 12px 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600; /* Slightly bolder text */
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for button */
+            flex-shrink: 0; /* Prevent button from shrinking */
+        }
+
+        .send-button:hover {
+            background-color: var(--send-button-hover-bg);
+            transform: translateY(-1px); /* Slight lift on hover */
+        }
+
+        .send-button:active {
+            transform: translateY(0); /* Press effect */
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Custom spinner animation */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2); /* White semi-transparent border */
+            border-left-color: var(--spinner-color); /* Blue spinner color */
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            animation: spin 1s linear infinite;
+            flex-shrink: 0; /* Prevent spinner from shrinking */
+            margin-left: 15px; /* Space from input field */
+        }
+
+        .spinner.hidden {
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Scrollbar styling for chat history (Webkit browsers) */
+        #chat-history::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #chat-history::-webkit-scrollbar-track {
+            background: var(--scrollbar-track); 
+            border-radius: 10px;
+        }
+
+        #chat-history::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 10px;
+        }
+
+        #chat-history::-webkit-scrollbar-thumb:hover {
+            background: var(--scrollbar-thumb-hover);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 95vh; /* Taller on smaller screens */
+                border-radius: 0; /* Full width/height on mobile */
+                max-height: unset; /* Remove max height constraint */
+            }
+            body {
+                padding: 0; /* Remove body padding on mobile */
+            }
+            .chat-header {
+                border-radius: 0; /* No rounded corners on header for full width */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Main chat container -->
+    <div class="chat-container">
+
+        <!-- Chat Header -->
+        <div class="chat-header">
+            AI Chatbot
+        </div>
+
+        <!-- Chat History Area -->
+        <div id="chat-history">
+            <!-- Initial welcome message -->
+            <div class="message-wrapper bot-message-wrapper">
+                <div class="message-bubble bot-message">
+                    Hello! How can I assist you today?
+                    <span class="message-timestamp">AI - 
+                        <script>
+                            // Display current time for welcome message
+                            const now = new Date();
+                            const hours = now.getHours();
+                            const minutes = now.getMinutes();
+                            const ampm = hours >= 12 ? 'PM' : 'AM';
+                            const formattedHours = hours % 12 || 12;
+                            document.write(`${formattedHours}:${minutes < 10 ? '0' : ''}${minutes} ${ampm}`);
+                        </script>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <input
+                type="text"
+                id="user-input"
+                class="user-input"
+                placeholder="Type your message..."
+                autocomplete="off"
+                disabled <!-- Disabled initially to prevent input before script loads -->
+            >
+            <button
+                id="send-button"
+                class="send-button"
+                disabled <!-- Disabled initially -->
+            >
+                Send
+            </button>
+            <!-- Loading spinner -->
+            <div id="loading-spinner" class="spinner hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Element References
+        const chatHistory = document.getElementById('chat-history');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const loadingSpinner = document.getElementById('loading-spinner');
+
+        // Application State
+        let chatMessages = []; // Stores the chat history as objects { role: 'user'/'bot', text: 'message' }
+        let isLoading = false; // Tracks if an API call is in progress
+        let debounceTimer; // Timer for debouncing
+
+        // API Configuration (Placeholders for demonstration)
+        const API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+        // The API key is left empty as per instructions; Canvas will provide it at runtime.
+        const API_KEY = ""; // Keep this empty; Canvas will inject the key
+
+        const DEBOUNCE_DELAY = 500; // milliseconds
+
+        // --- Helper Functions ---
+
+        /**
+         * Formats the current time for display in messages.
+         * @returns {string} Formatted time (e.g., "7:17 PM")
+         */
+        function getCurrentFormattedTime() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const formattedHours = hours % 12 || 12;
+            return `${formattedHours}:${minutes < 10 ? '0' : ''}${minutes} ${ampm}`;
+        }
+
+        /**
+         * Appends a message to the chat history display.
+         * @param {string} role - 'user' or 'bot'
+         * @param {string} text - The message text
+         */
+        function displayMessage(role, text) {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = `message-wrapper ${role}-message-wrapper`; // Use custom classes for alignment
+
+            const messageBubble = document.createElement('div');
+            messageBubble.className = `message-bubble ${role}-message`; // Use custom classes for background/text
+
+            messageBubble.textContent = text;
+            
+            // Add timestamp
+            const timestamp = document.createElement('span');
+            timestamp.className = 'message-timestamp';
+            timestamp.textContent = `${role === 'user' ? 'You' : 'AI'} - ${getCurrentFormattedTime()}`;
+            messageBubble.appendChild(timestamp);
+
+            messageWrapper.appendChild(messageBubble);
+            chatHistory.appendChild(messageWrapper);
+
+            // Scroll to the bottom of the chat history with smooth animation
+            chatHistory.scrollTo({
+                top: chatHistory.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
+        /**
+         * Toggles the visibility of the loading spinner and disables/enables input/button.
+         * @param {boolean} show - True to show spinner and disable elements, false to hide and enable.
+         */
+        function toggleLoadingState(show) {
+            isLoading = show;
+            if (show) {
+                loadingSpinner.classList.remove('hidden');
+                sendButton.disabled = true;
+                userInput.disabled = true;
+                userInput.placeholder = 'Thinking...';
+            } else {
+                loadingSpinner.classList.add('hidden');
+                sendButton.disabled = false;
+                userInput.disabled = false;
+                userInput.placeholder = 'Type your message...';
+                userInput.focus(); // Focus on input after response
+            }
+        }
+
+        /**
+         * Sends the user's message to the AI and handles the response.
+         */
+        async function sendMessage() {
+            const userText = userInput.value.trim();
+            if (userText === '') return; // Don't send empty messages
+
+            displayMessage('user', userText);
+            chatMessages.push({ role: 'user', parts: [{ text: userText }] });
+            userInput.value = ''; // Clear input field
+
+            toggleLoadingState(true); // Show loading spinner and disable input
+
+            try {
+                // Construct the payload for the Gemini API call
+                const payload = {
+                    contents: chatMessages.map(msg => ({ // Map chatMessages to the expected 'contents' format
+                        role: msg.role === 'user' ? 'user' : 'model', // Gemini API uses 'model' for bot
+                        parts: msg.parts
+                    }))
+                };
+
+                // Make the API call
+                const response = await fetch(`${API_BASE_URL}?key=${API_KEY}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    // If response is not OK (e.g., 400, 500), throw an error
+                    const errorData = await response.json();
+                    throw new Error(`API error: ${response.status} - ${errorData.error.message || response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                // Process the AI's response
+                let botResponseText = 'Sorry, I could not generate a response.';
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    botResponseText = result.candidates[0].content.parts[0].text;
+                } else {
+                    // Handle cases where the response structure is unexpected
+                    console.error("Unexpected API response structure:", result);
+                    botResponseText = "An unexpected error occurred with the AI response.";
+                }
+
+                displayMessage('bot', botResponseText);
+                chatMessages.push({ role: 'bot', parts: [{ text: botResponseText }] });
+
+            } catch (error) {
+                console.error('Error calling AI API:', error);
+                // Display user-friendly error message in chat history
+                displayMessage('bot', `Error: ${error.message}. Please try again.`);
+            } finally {
+                toggleLoadingState(false); // Hide loading spinner and re-enable input
+            }
+        }
+
+        /**
+         * Debounce function to limit how often a function can be called.
+         * @param {function} func - The function to debounce.
+         * @param {number} delay - The delay in milliseconds.
+         * @returns {function} The debounced function.
+         */
+        function debounce(func, delay) {
+            return function(...args) {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    func.apply(this, args);
+                }, delay);
+            };
+        }
+
+        // --- Event Listeners ---
+
+        // Debounce the sendMessage function for the button click
+        sendButton.addEventListener('click', debounce(sendMessage, DEBOUNCE_DELAY));
+
+        // Debounce the sendMessage function for the Enter key press in the input field
+        userInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter' && !isLoading) {
+                debounce(sendMessage, DEBOUNCE_DELAY)(); // Call debounced function
+            }
+        });
+
+        // Initialize UI after script loads
+        document.addEventListener('DOMContentLoaded', () => {
+            userInput.disabled = false;
+            sendButton.disabled = false;
+            userInput.focus();
+        });
+    </script>
+</body>
+</html>

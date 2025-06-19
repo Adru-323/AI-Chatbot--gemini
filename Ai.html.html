@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI CHATBOT</title>
+    <link rel="stylesheet" href="AI.css">
+</head>
+<body>
+      <!-- Main chat container -->
+    <div class="chat-container">
+
+        <!-- Chat Header -->
+        <div class="chat-header">
+            AI Chatbot
+        </div>
+
+        <!-- Chat History Area -->
+        <div id="chat-history">
+            <!-- Initial welcome message  msg container -->
+            <div class="message-wrapper bot-message-wrapper"> 
+                <div class="message-bubble bot-message">
+                    Hello! How can I assist you today?
+                    <!-- Boliye chinal ji Kaise madat chahiye tumhme! -->
+
+                    <span class="message-timestamp">AI - <span  id="timeDisplay"></span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <input
+                type="text"
+                id="user-input"
+                class="user-input"
+                placeholder="Type your message..."
+                autocomplete="off"
+                >
+            
+            <button
+                id="send-button"
+                class="send-button"
+                disabled 
+            >
+                Send
+            </button>
+            <!-- Loading spinner -->
+            <div id="loading-spinner" class="spinner hidden"></div>
+        </div>
+    </div>
+</body>
+<script src="Ai.js"></script>
+</html>
